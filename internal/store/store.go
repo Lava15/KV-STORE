@@ -7,51 +7,53 @@ import (
 	"sync"
 )
 
+type Store interface {
+	Get(key string) (string, bool)
+	Set(key string, value string)
+	Delete(key string)
+	SaveFile(filename string) error
+	LoadFile(filename string) error
+}
+
+type store struct {
+	sync.RWMutex
+	data map[string]string
+}
+
 var (
-	instance *Store
+	instance Store
 	once     sync.Once
 )
 
-func GetStore() *Store {
+func GetStore() Store {
 	once.Do(func() {
-		instance = &Store{
+		instance = &store{
 			data: make(map[string]string),
 		}
 	})
 	return instance
 }
 
-type Store struct {
-	sync.RWMutex
-	data map[string]string
-}
-
-func NewStore() *Store {
-	return &Store{
-		data: make(map[string]string),
-	}
-}
-
-func (s *Store) Get(key string) (string, bool) {
+func (s store) Get(key string) (string, bool) {
 	s.RLock()
 	defer s.RUnlock()
-	val, ok := s.data[key]
-	return val, ok
+	value, ok := s.data[key]
+	return value, ok
 }
 
-func (s *Store) Set(key string, value string) {
+func (s store) Set(key string, value string) {
 	s.Lock()
 	defer s.Unlock()
 	s.data[key] = value
 }
 
-func (s *Store) Delete(key string) {
+func (s store) Delete(key string) {
 	s.Lock()
 	defer s.Unlock()
 	delete(s.data, key)
 }
 
-func (s *Store) SaveFile(filename string) error {
+func (s store) SaveFile(filename string) error {
 	s.RLock()
 	defer s.RUnlock()
 	data, err := json.Marshal(s.data)
@@ -61,8 +63,8 @@ func (s *Store) SaveFile(filename string) error {
 	return os.WriteFile(filename, data, 0644)
 }
 
-func (s *Store) LoadFile(filename string) error {
-	s.RLock()
+func (s store) LoadFile(filename string) error {
+	s.Lock()
 	defer s.Unlock()
 	file, err := os.Open(filename)
 	if err != nil {
