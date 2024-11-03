@@ -1,37 +1,62 @@
 package store
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
-func TestStore(t *testing.T) {
-	s := NewStore()
-	s.Set("test_key", "test_value")
-	val, ok := s.Get("test_key")
-	if !ok || val != "test_value" {
-		t.Errorf("Expected val=test_value, got=%v", val)
+func TestStoreOperations(t *testing.T) {
+	s := GetStore()
+	// Ensure the store is empty initially
+	_, exists := s.Get("test_key")
+	if exists {
+		t.Errorf("Expected key 'test_key' to not exist initially")
 	}
+
+	// Test Set and Get
+	s.Set("test_key", "test_value")
+	val, exists := s.Get("test_key")
+	if !exists {
+		t.Errorf("Expected key 'test_key' to exist")
+	}
+	if val != "test_value" {
+		t.Errorf("Expected value 'test_value', got '%s'", val)
+	}
+
+	// Test Delete
 	s.Delete("test_key")
-	_, ok = s.Get("test_key")
-	if ok {
-		t.Errorf("Expected val=nil, got=%v", val)
+	_, exists = s.Get("test_key")
+	if exists {
+		t.Errorf("Expected key 'test_key' to be deleted")
 	}
 }
 
-func TestPersistence(t *testing.T) {
-	s := NewStore()
+func TestStorePersistence(t *testing.T) {
+	s := GetStore()
+
 	s.Set("foo", "bar")
+
+	// Save to file
 	err := s.SaveFile("testdata.json")
 	if err != nil {
-		t.Errorf("Error saving to file: %v", err)
+		t.Fatalf("Error saving to file: %v", err)
 	}
+	defer os.Remove("testdata.json") // Clean up
 
-	s2 := NewStore()
+	// Create a new store instance
+	s2 := GetStore()
+
+	s2.Delete("foo")
 	err = s2.LoadFile("testdata.json")
 	if err != nil {
-		t.Errorf("Error loading from file: %v", err)
+		t.Fatalf("Error loading from file: %v", err)
 	}
 
-	val, ok := s2.Get("foo")
-	if !ok || val != "bar" {
-		t.Errorf("Expected 'bar', got '%s'", val)
+	val, exists := s2.Get("foo")
+	if !exists {
+		t.Errorf("Expected key 'foo' to exist after loading")
+	}
+	if val != "bar" {
+		t.Errorf("Expected value 'bar', got '%s'", val)
 	}
 }
