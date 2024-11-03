@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	store "github.com/lava15/KV-STORE"
+	"github.com/lava15/KV-STORE/internal/store"
 	"io"
 	"log"
 	"net/http"
