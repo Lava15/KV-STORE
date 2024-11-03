@@ -7,6 +7,20 @@ import (
 	"sync"
 )
 
+var (
+	instance *Store
+	once     sync.Once
+)
+
+func GetStore() *Store {
+	once.Do(func() {
+		instance = &Store{
+			data: make(map[string]string),
+		}
+	})
+	return instance
+}
+
 type Store struct {
 	sync.RWMutex
 	data map[string]string
