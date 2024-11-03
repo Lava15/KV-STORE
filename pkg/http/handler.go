@@ -11,7 +11,7 @@ type Handler struct {
 	Store *store.Store
 }
 
-func NewHandler(store *store.Store) *Handler {
+func NewHandler(store store.Store) *Handler {
 	return &Handler{Store: store}
 }
 
